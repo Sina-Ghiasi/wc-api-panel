@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr" dir="rtl">
 
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.rtl.min.css" integrity="sha384-gXt9imSW0VcJVHezoNQsP+TNrjYXoGcrqBZJpry9zJt8PCQjobwmhMGaDHTASo9N" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 </head>
 
@@ -22,22 +22,57 @@
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
     $dotenv->safeLoad();
 
+    //debug utility function
+    function console_log($variable)
+    {
+        echo '<script>console.log(' . json_encode($variable) . ')</script>';
+    }
+
     $woocommerce = new Client(
         $_ENV['WCP_STORE_URL'],
         $_ENV['WCP_CONSUMER_KEY'],
         $_ENV['WCP_CONSUMER_SECRET'],
         [
-            'wp_api' => (bool) $_ENV['WCP_WP_API'], 
+            'wp_api' => (bool) $_ENV['WCP_WP_API'],
             'version' => $_ENV['WCP_WC_VERSION'],
             'verify_ssl' => (bool) $_ENV['WCP_VERIFY_SSL'],
-            'timeout' =>intval($_ENV['WCP_TIMEOUT']) ,
+            'timeout' => intval($_ENV['WCP_TIMEOUT']),
         ]
     );
-    //test
-    var_dump($woocommerce);
-    print_r( $woocommerce->get('products'));
-
+    //var_dump($woocommerce);
+    $products = $woocommerce->get('products', ["_fields" => ["name", "categories", "type", "price"]]);
+    $system_status = $woocommerce->get('system_status', ["_fields" => "settings"]);
+    console_log($products);
     ?>
+    <div class="container">
+        <h2 class="sub-header">لیست محصولات</h2>
+        <div class='table-responsive'>
+            <table id='myTable' class='table table-striped table-bordered'>
+                <thead>
+                    <tr>
+                        <th>نام</th>
+                        <th>دسته ها</th>
+                        <th>نوع</th>
+                        <th>قیمت</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    foreach ($products as $product) { ?>
+                        <tr>
+                            <td><?php echo $product->name; ?></td>
+                            <td><?php echo implode(" ", array_map(function ($category) {
+                                    return $category->name;
+                                }, $product->categories)); ?></td>
+                            <td><?php echo $product->type; ?></td>
+                            <td><?php echo $product->price . ' ' . $system_status->settings->currency_symbol ?></td>
+                        </tr>
+                    <?php }
+                    ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 
 </html>
