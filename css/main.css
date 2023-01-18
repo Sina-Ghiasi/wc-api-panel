@@ -1,0 +1,11 @@
+@font-face {
+  font-family: shabnam;
+  src: url(fonts/Shabnam.ttf);
+}
+
+body {
+  font-family: shabnam;
+}
+.cardbody-color {
+  background-color: #ebf2fa;
+}

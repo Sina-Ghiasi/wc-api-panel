@@ -1,3 +1,21 @@
+<?php
+require __DIR__ . '/vendor/autoload.php';
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->safeLoad();
+
+
+session_start();
+if (!isset($_SESSION['username'])) {
+    if ($_POST['username'] == $_ENV['WCP_USERNAME'] && $_POST['password'] == $_ENV['WCP_PASSWORD']) {
+        $_SESSION['username'] = $_ENV['WCP_USERNAME'];
+    } else {
+        $_SESSION['error_message'] = "اطلاعات کاربری اشتباه می باشد";
+        header("Location: login.php");
+        exit();
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="fr" dir="rtl">
 
@@ -5,7 +23,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel</title>
+    <title>پنل</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.rtl.min.css" integrity="sha384-gXt9imSW0VcJVHezoNQsP+TNrjYXoGcrqBZJpry9zJt8PCQjobwmhMGaDHTASo9N" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
@@ -14,13 +32,8 @@
 <body>
     <?php
 
-    require __DIR__ . '/vendor/autoload.php';
-
     use Automattic\WooCommerce\Client;
     use Automattic\WooCommerce\HttpClient\HttpClientException;
-
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-    $dotenv->safeLoad();
 
     //debug utility function
     function console_log($variable)
@@ -72,6 +85,7 @@
                 </tbody>
             </table>
         </div>
+        <a href="logout.php" class="btn btn-danger">خروج</a>
     </div>
 </body>
 
