@@ -61,7 +61,6 @@ if (!isset($_SESSION['username'])) {
         ]
     );
 
-    $products = $woocommerce->get('products', ["_fields" => ["name", "categories", "type", "price", "id"]]);
     $system_status = $woocommerce->get('system_status', ["_fields" => "settings"]);
     ?>
     <div class="container mt-3">
@@ -78,16 +77,23 @@ if (!isset($_SESSION['username'])) {
                 </thead>
                 <tbody>
                     <?php
-                    foreach ($products as $product) { ?>
-                        <tr>
-                            <td><?php echo $product->name; ?></td>
-                            <td><?php echo implode(" ", array_map(function ($category) {
-                                    return $category->name;
-                                }, $product->categories)); ?></td>
-                            <td><?php echo $product->type; ?></td>
-                            <td contenteditable='true' data-modified="0" data-product-id="<?php echo $product->id ?>"><?php echo $product->price; ?></td>
-                        </tr>
+                    $products_page = 1;
+                    do {
+                        $products = $woocommerce->get('products', ["per_page" => 50, "page" => $products_page, "_fields" => ["name", "categories", "type", "price", "id"]]);
+                        foreach ($products as $product) { ?>
+                            <tr>
+                                <td><?php echo $product->name; ?></td>
+                                <td><?php echo implode(" ", array_map(function ($category) {
+                                        return $category->name;
+                                    }, $product->categories)); ?></td>
+                                <td><?php echo $product->type; ?></td>
+                                <td contenteditable='true' data-modified="0" data-product-id="<?php echo $product->id ?>"><?php echo $product->price; ?></td>
+                            </tr>
                     <?php }
+                        $last_response_headers = $woocommerce->http->getResponse()->getHeaders();
+                        $products_totalpages = intval($last_response_headers['x-wp-totalpages']);
+                        $products_page++;
+                    } while ($products_page <= $products_totalpages)
                     ?>
                 </tbody>
             </table>
