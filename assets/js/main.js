@@ -75,6 +75,29 @@ document.addEventListener(
     });
 
     updateProductsBtn.addEventListener("focusout", resetAlert);
+
+    //filter button
+    let filterProductsBtn = document.getElementById("filter-products-btn");
+    filterProductsBtn.addEventListener("click", () => {
+      const params = new URLSearchParams();
+      let selectedCategory = document.getElementById(
+        "products-category-select"
+      ).value;
+      if (selectedCategory && selectedCategory !== "all")
+        params.append("category_id", selectedCategory);
+
+      let searchInputText = document.getElementById(
+        "products-search-input"
+      ).value;
+      if (searchInputText) params.append("search_str", searchInputText);
+
+      if (params.toString() === "") {
+        location.href = window.location.origin + window.location.pathname;
+      } else {
+        location.href =
+          location.origin + location.pathname + "?" + params.toString();
+      }
+    });
   },
   false
 );
