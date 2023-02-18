@@ -23,12 +23,16 @@ $woocommerce = new Client(
         'timeout' => intval($_ENV['WCP_TIMEOUT']),
     ]
 );
-$data = json_decode(file_get_contents('php://input'));
+$products = json_decode(file_get_contents('php://input'));
+
+$products_data = [
+    'update' => $products
+];
 
 try {
-    print_r($woocommerce->post('products/batch', $data));
+    print_r($woocommerce->post('products/batch', $products_data));
 } catch (HttpClientException $e) {
-    header('HTTP/1.1 500 Internal Server Booboo');
+    header('HTTP/1.1 500 Internal Server Error');
     header('Content-Type: application/json; charset=UTF-8');
     die(json_encode(array('message' => $e->getMessage(), 'code' => $e->getCode())));
 }

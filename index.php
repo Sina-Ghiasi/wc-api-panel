@@ -51,7 +51,15 @@ if (!isset($_SESSION['username'])) {
     {
         echo '<script>console.log(' . json_encode($variable) . ')</script>';
     }
-
+    function get_value_of_key_in_metadata($metadata, $key)
+    {
+        foreach ($metadata as $data_object) {
+            if ($data_object->key == $key) {
+                return $data_object->value;
+            }
+        }
+        return false;
+    }
     $woocommerce = new Client(
         $_ENV['WCP_STORE_URL'],
         $_ENV['WCP_CONSUMER_KEY'],
@@ -97,7 +105,66 @@ if (!isset($_SESSION['username'])) {
                     }
                 } ?>
             </select>
-            <button id="filter-products-btn" class="btn btn-primary">فیلتر</button>
+            <button id="filter-products-btn" class="btn btn-dark me-2">فیلتر</button>
+
+
+            <button type="button" class="btn btn-primary ms-4" data-bs-toggle="modal" data-bs-target="#priceBulkEdit">
+                تغییر قیمت دسته جمعی
+            </button>
+
+            <div class="modal fade" id="priceBulkEdit" tabindex="-1" aria-labelledby="priceBulkEdit" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">تغییر قیمت دسته جمعی</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <select id="modal-category-select" class="form-select w-25 mb-3"
+                                aria-label="Default select example">
+                                <?php
+                                foreach ($categories as $category) {
+                                    ?>
+                                    <option value="<?php echo $category->id; ?>"><?php echo $category->name; ?>
+                                    </option>
+                                    <?php
+                                } ?>
+                            </select>
+
+                            <div class="row g-3 align-items-center my-2">
+                                <div class="col-auto">
+                                    <label for="wireRod" class="col-form-label">مقدار وایرود</label>
+                                </div>
+                                <div class="col-auto">
+                                    <input id="wir-rod" type="number" class="form-control">
+                                </div>
+                                <div class="col-auto">
+                                    <label for="profit-value" class="col-form-label">مقدار سود</label>
+                                </div>
+                                <div class="col-auto">
+                                    <input id="profit-value" type="number" class="form-control">
+                                </div>
+                                <div class="col-auto">
+                                    <button id="update-category-values" class="btn btn-dark ">
+                                        ذخیره مقادیر
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="modal-update-result" class="alert mt-4" role="alert">
+
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button id="update-products-by-category" class="btn btn-success ">
+                                به روز رسانی محصولات در این دسته
+                            </button>
+                            <button class="btn btn btn-danger" data-bs-dismiss="modal">بستن</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
         </div>
         <div class='table-responsive'>
             <table id='products-table' class='table table-striped table-bordered'>
@@ -105,7 +172,7 @@ if (!isset($_SESSION['username'])) {
                     <tr>
                         <th>نام</th>
                         <th>دسته ها</th>
-                        <th>نوع</th>
+                        <th>جزء قیمت</th>
                         <th>قیمت (
                             <?php echo $system_status->settings->currency_symbol; ?>)
                         </th>
@@ -116,33 +183,37 @@ if (!isset($_SESSION['username'])) {
                     $products_page = 1;
 
                     do {
-                        $products = $woocommerce->get('products', ["per_page" => 50, "page" => $products_page, "category" => $category_id, "search" => $search_str, "_fields" => ["name", "categories", "type", "price", "id"]]);
+                        $products = $woocommerce->get('products', ["per_page" => 50, "page" => $products_page, "category" => $category_id, "search" => $search_str, "_fields" => ["name", "categories", "meta_data", "price", "id"]]);
                         foreach ($products as $product) { ?>
-                            <tr>
+                            <tr data-modified="0" data-product-id="<?php echo $product->id ?>">
                                 <td>
                                     <?php echo $product->name; ?>
                                 </td>
                                 <td>
-                                    <?php echo implode(",", array_map(function ($category) {
+                                    <?php echo implode(", ", array_map(function ($category) {
                                         return $category->name;
                                     }, $product->categories)); ?>
                                 </td>
-                                <td>
-                                    <?php echo $product->type; ?>
+                                <td contenteditable='true'>
+                                    <?php
+                                    echo get_value_of_key_in_metadata($product->meta_data, "wpc_product_price_component");
+                                    ?>
                                 </td>
-                                <td contenteditable='true' data-modified="0" data-product-id="<?php echo $product->id ?>"><?php
-                                   echo $product->price; ?></td>
+                                <td contenteditable='true'>
+                                    <?php
+                                    echo $product->price; ?>
+                                </td>
                             </tr>
                         <?php }
                         $last_response_headers = $woocommerce->http->getResponse()->getHeaders();
-                        $products_totalpages = intval($last_response_headers['x-wp-totalpages']);
+                        $products_totalpages = isset($last_response_headers['x-wp-totalpages']) ? intval($last_response_headers['x-wp-totalpages']) : 1;
                         $products_page++;
-                    } while ($products_page <= $products_totalpages)
+                    } while ($products_page <= $products_totalpages);
                     ?>
                 </tbody>
             </table>
         </div>
-        <button id="update-products-btn" class="btn btn-success">به روز رسانی</button>
+        <button id="update-products-by-list" class="btn btn-success">به روز رسانی تغییرات لیست</button>
         <a href="logout.php" class="btn btn-danger">خروج</a>
         <div id="update-products-result" class="alert mt-4" role="alert">
 
